@@ -34,7 +34,7 @@ public class registerForm extends AppCompatActivity {
     }
 
     private boolean checkRegistrationValid(){
-
+        return true;
     }
 
     public void onClickRegister(){
