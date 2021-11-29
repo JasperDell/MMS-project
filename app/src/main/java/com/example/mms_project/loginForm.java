@@ -51,7 +51,7 @@ public class loginForm extends AppCompatActivity {
             this.showDialog("Error 01", email + " is an invalid email address. Please try again.");
         }
         else if(!this.checkEmailDatabase(email)){ //Email not known in DB
-            this.showDialog("Error", "This Email address is unknown to us. Please check for mistakes or press the register button below.");
+            this.showDialog("Error 02", "This Email address is unknown to us. Please check for mistakes or press the register button below.");
         }
         else { //All good
             //Continue to personalized screen with user data
@@ -63,17 +63,17 @@ public class loginForm extends AppCompatActivity {
     }
 
     public void registerSend(View view){
-        String email = findViewById(R.id.textEmail).toString();
+        String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
         if(!this.checkEmailFormat(email)){ //Not a valid email string
-            this.showDialog("Error", "This is an invalid email address. Please try again.");
+            this.showDialog("Error 03", "This is an invalid email address. Please try again.");
         }
         else if(this.checkEmailDatabase(email)){ //Already exists! Can't register
-            this.showDialog("Error", "This email is already registered in our Database. Please log in instead.");
+            this.showDialog("Error 04", "This email is already registered in our Database. Please log in instead.");
         }
         else { //All good
-            Intent intent = new Intent(this, loginForm.class);
-            startActivity(intent);
+            Intent intent = new Intent(this, registerForm.class);
             intent.putExtra("email-val", email);
+            startActivity(intent);
             return;
         }
         return;

@@ -18,9 +18,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void logInButton(View view){
-        //Button login = findViewById(R.id.loginButton);
-        //login.setText("Lmao");
-
         Intent intent = new Intent(this, loginForm.class);
         startActivity(intent);
         return;

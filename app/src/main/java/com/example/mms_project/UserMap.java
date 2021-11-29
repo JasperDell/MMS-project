@@ -18,6 +18,7 @@ public class UserMap {
     //Profile view information
     public String firstName = "";
     public String lastName = "";
+    public String subtitle = "";
     public int age;
     public boolean pers_available; //Ready to meet?
     public boolean pers_nudgeable; //Can the user request a meeting?

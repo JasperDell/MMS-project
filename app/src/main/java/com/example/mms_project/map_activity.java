@@ -10,6 +10,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -188,16 +189,25 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     public void showUserInfo(@NonNull UserMap user){
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.user_map_info);
-        ((TextView) dialog.findViewById(R.id.txtTitle)).setText(user.firstName);
-        ((TextView) dialog.findViewById(R.id.txtDesc)).setText(user.lastName);
+        String title = user.firstName + " (" + String.valueOf(user.age) + ')';
+        ((TextView) dialog.findViewById(R.id.txtTitle)).setText(title);
+        ((TextView) dialog.findViewById(R.id.txtDesc)).setText(user.subtitle);
+        ((TextView) dialog.findViewById(R.id.txtDescLarge)).setText(user.bio);
 
         Button btnNudge = dialog.findViewById(R.id.btn_nudge);
-        btnNudge.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                //send msg to server
-            }
-        });
+
+        if (user.pers_nudgeable){
+            btnNudge.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View view) {
+                    //send msg to server
+                }
+            });
+        }
+        else {
+            btnNudge.setBackgroundColor(Color.GRAY);
+            btnNudge.setEnabled(false);
+        }
 
         Button btnClose = dialog.findViewById(R.id.btn_ok);
         btnClose.setOnClickListener(new View.OnClickListener(){
@@ -215,7 +225,10 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void dropNeighbourhood(){
         for(int i = 0; i < local_inf.size(); i++){
-            dropMarker(local_inf.get(i), false);
+            UserMap nb = local_inf.get(i);
+            if (nb.pers_available) {
+                dropMarker(nb, false);
+            }
         }
     }
 
@@ -224,9 +237,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         LatLng latLng = new LatLng(user.lastLoc.getLatitude(), user.lastLoc.getLongitude());
         Bitmap bmap = user.icon;
-        //Bitmap bmap = ((BitmapDrawable) getDrawable(R.drawable.default_woman)).getBitmap();
-        //bmap = bmap.copy(Bitmap.Config.ARGB_8888, true);
-
         BitmapDescriptor res = BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmap,BMAP_DIM,BMAP_DIM, false));
         Marker m = googleMap.addMarker(new MarkerOptions()
                 .position(latLng)
@@ -236,7 +246,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         m.setTag(user);
 
         if(focus){
-            googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+            //googleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, MAP_ZOOM)); //zoom is in range [2.0, 21.0]
         }
     }
