@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.ZoneId;
 import java.util.Date;
 
 public class registerForm extends AppCompatActivity {
@@ -108,6 +111,7 @@ public class registerForm extends AppCompatActivity {
 
             if (bd.before(sdf.parse("01-01-1901")) || bd.after(sdf.parse("01-01-2011")))
                 return false;
+            register.age = Period.between(LocalDate.now(), bd.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()).getYears();
 
         } catch (ParseException e) {
             return false;
@@ -120,7 +124,7 @@ public class registerForm extends AppCompatActivity {
 
     }
 
-    public void onClickRegister(){
+    public void onClickRegister(View view){
         if(!checkRegistrationValid()){
             return;
         }
@@ -130,11 +134,21 @@ public class registerForm extends AppCompatActivity {
         register.bio = ((TextView)findViewById(R.id.textBio)).getText().toString();
 
 
+
         //Communicate with server and wait for response
         sendUserToServer();
 
         //Go to the mapview
+        System.out.println("Making the intent map");
         Intent intent = new Intent(this, map_activity.class);
+        //intent.putExtra("usr", register);
+        intent.putExtra("reg", true);
+        intent.putExtra("fname", register.firstName);
+        intent.putExtra("lname", register.lastName);
+        intent.putExtra("bio", register.bio);
+        intent.putExtra("img", register.icon);
+        intent.putExtra("age", register.age);
         startActivity(intent);
+        System.out.println("Going to the map after registration");
     }
 }

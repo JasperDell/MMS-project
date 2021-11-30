@@ -6,8 +6,9 @@ import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 
 import java.io.File;
+import java.io.Serializable;
 
-public class UserMap {
+public class UserMap implements Serializable {
 
     //Basic map information
     public Location lastLoc = new Location("");
