@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MMSProject">
         <activity
-            android:name=".data.registerForm"
+            android:name=".registerForm"
             android:exported="false" />
         <activity
             android:name=".map_activity"
@@ -22,10 +22,7 @@
         <activity
             android:name=".loginForm"
             android:exported="false" />
-        <activity
-            android:name=".ui.login.LoginActivity"
-            android:exported="false"
-            android:label="@string/title_activity_login" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -38,7 +35,10 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="API_KEY" />
+            android:value="KEY" />
+        <meta-data
+            android:name="preloaded_fonts"
+            android:resource="@array/preloaded_fonts" />
     </application>
 
 </manifest>
