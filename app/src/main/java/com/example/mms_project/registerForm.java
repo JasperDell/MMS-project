@@ -135,9 +135,9 @@ public class registerForm extends AppCompatActivity {
         return true;
     }
 
-    private void sendUserToServer(String userID, String first_name, String last_name, String email){
+    private void sendUserToServer(String userID, String first_name, String last_name, String email, String bio, int age){
         DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
-        DataBaseUser dbUser = new DataBaseUser(first_name, last_name, email);
+        DataBaseUser dbUser = new DataBaseUser(first_name, last_name, email, bio, age);
         mDatabase.child(userID).setValue(dbUser);
     }
 
@@ -158,7 +158,7 @@ public class registerForm extends AppCompatActivity {
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()) {
                     FirebaseUser user = mAuth.getCurrentUser();
-                    sendUserToServer(user.getUid(), register.firstName, register.lastName, email);
+                    sendUserToServer(user.getUid(), register.firstName, register.lastName, email, register.bio, register.age);
 
                     FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
                     StorageReference storageRef = storage.getReference();
