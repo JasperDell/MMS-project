@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/login_back"
-    tools:context=".loginForm">
+    tools:context=".registerForm">
 
     <EditText
         android:id="@+id/textFirstName"
@@ -83,7 +83,7 @@
         android:layout_marginTop="16dp"
         android:ems="10"
         android:inputType="date"
-        android:hint="Birthday (DD/MM/YYYY)"
+        android:hint="Birthday (DD-MM-YYYY)"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.134"

@@ -17,6 +17,9 @@
             android:name=".data.registerForm"
             android:exported="false" />
         <activity
+            android:name=".registerForm"
+            android:exported="false" />
+        <activity
             android:name=".map_activity"
             android:exported="false" />
         <activity
@@ -38,7 +41,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="API_KEY" />
+            android:value="AIzaSyDYWBxywNVjU0kejluC9S3brPlfglVfu1w" />
     </application>
 
 </manifest>
