@@ -68,13 +68,20 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     //Test function to fake user info with fake intel
-    private void set_defaults(){
-        //set user
-        person_inf = new UserMap();
-        person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
-        //person_inf.setIcon(R.drawable.default_man);
-        person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
-        person_inf.firstName = "Me";
+    private void set_defaults(UserMap curr){
+
+        if(curr != null){
+            person_inf = curr;
+            person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
+        }
+        else {
+            //set user
+            person_inf = new UserMap();
+            person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
+            //person_inf.setIcon(R.drawable.default_man);
+            person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
+            person_inf.firstName = "Me";
+        }
 
         //set neighbourhood
         UserMap temp_inf = new UserMap();
@@ -82,13 +89,34 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         temp_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_woman)).getBitmap();
         temp_inf.firstName = "Other";
         temp_inf.markerTagId = local_inf.size(); //set marker index to local_inf index
+        temp_inf.pers_available = true;
+        temp_inf.pers_nudgeable = false;
+        temp_inf.subtitle = "General person";
+        temp_inf.age = 50;
+        temp_inf.bio = "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat";
         local_inf.add(temp_inf);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        set_defaults();
-        System.out.println("Booting up map!");
+        System.out.println("Starting up map");
+
+        //UserMap reg = (UserMap) getIntent().getSerializableExtra("usr");
+        Boolean reg = (boolean) getIntent().getExtras().get("reg");
+        if(reg != null && reg){
+            UserMap register = new UserMap();
+
+            register.firstName = (String) getIntent().getExtras().get("fname");
+            register.lastName = (String) getIntent().getExtras().get("lname");
+            register.bio = (String) getIntent().getExtras().get("bio");
+            register.age = (int) getIntent().getExtras().get("age");
+            register.icon = (Bitmap) getIntent().getExtras().get("img");
+            set_defaults(register);
+        }
+        else {
+            set_defaults(null);
+        }
+
         super.onCreate(savedInstanceState);
         //Set up location services
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
