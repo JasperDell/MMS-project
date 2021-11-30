@@ -57,15 +57,12 @@ public class loginForm extends AppCompatActivity {
 
     public void registerSend(View view){
         String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
-        if(!this.checkEmailFormat(email)){ //Not a valid email string
-            this.showDialog("Error 03", "This is an invalid email address. Please try again.");
-        }
-        else if(this.checkEmailDatabase(email)){ //Already exists! Can't register
+        if(this.checkEmailDatabase(email)){ //Already exists! Can't register
             this.showDialog("Error 04", "This email is already registered in our Database. Please log in instead.");
         }
         else { //All good
             Intent intent = new Intent(this, registerForm.class);
-            intent.putExtra("email-val", email);
+            //intent.putExtra("email-val", email);
             startActivity(intent);
             return;
         }
