@@ -92,23 +92,6 @@ public class registerForm extends AppCompatActivity {
                 b = getRoundedCroppedBitmap(b);
                 register.icon = b;
                 ((ImageView)findViewById(R.id.imageViewIcon)).setImageBitmap(b);
-
-                FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
-                StorageReference storageRef = storage.getReference();
-                StorageReference imagesRef = storageRef.child("images");
-                StorageReference fileRef = imagesRef.child(mAuth.getCurrentUser().getUid());
-
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                b.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-                byte[] imageData = baos.toByteArray();
-
-                UploadTask uploadTask = fileRef.putBytes(imageData);
-                uploadTask.addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception exception) {
-                        System.out.println("couldn't upload image");
-                    }
-                });
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -176,6 +159,22 @@ public class registerForm extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     FirebaseUser user = mAuth.getCurrentUser();
                     sendUserToServer(user.getUid(), register.firstName, register.lastName, email);
+
+                    FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
+                    StorageReference storageRef = storage.getReference();
+                    StorageReference imagesRef = storageRef.child("images");
+                    StorageReference fileRef = imagesRef.child(user.getUid());
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    register.icon.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    byte[] imageData = baos.toByteArray();
+                    UploadTask uploadTask = fileRef.putBytes(imageData);
+                    uploadTask.addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            System.out.println("couldn't upload image");
+                        }
+                    });
                 } else {
                     return;
                 }
