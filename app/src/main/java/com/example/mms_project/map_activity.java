@@ -72,8 +72,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     String markerSelection = "";
 
     //User information
-    Location currentLocation;
-    UserMap person_inf;
+    UserMap person_inf = null;
     List<UserMap> local_inf = new ArrayList<UserMap>();
 
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -81,21 +80,19 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int BMAP_DIM = 256;
     private static final float MAP_ZOOM = 19.25F;
 
-
-
     //Test function to fake user info with fake intel
-    private void set_defaults(UserMap curr){
+    private void set_defaults(){
 
-        if(curr != null){
-            person_inf = curr;
+        if(person_inf != null){
+            System.out.println("Got the user from the server!");
             person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
             person_inf.uID = mAuth.getCurrentUser().getUid();
         }
         else {
+            System.out.println("Setting up default fake user");
             //set user
             person_inf = new UserMap();
             person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
-            //person_inf.setIcon(R.drawable.default_man);
             person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
             person_inf.firstName = "Me";
         }
@@ -114,48 +111,37 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         local_inf.add(temp_inf);
     }
 
-    private Bitmap getRoundedCroppedBitmap(Bitmap bitmap) {
-        bitmap = Bitmap.createScaledBitmap(bitmap,BMAP_DIM,BMAP_DIM, false);
-        int widthLight = bitmap.getWidth();
-        int heightLight = bitmap.getHeight();
-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-        Paint paintColor = new Paint();
-        paintColor.setFlags(Paint.ANTI_ALIAS_FLAG);
-        RectF rectF = new RectF(new Rect(0, 0, widthLight, heightLight));
-        canvas.drawRoundRect(rectF, widthLight / 2, heightLight / 2, paintColor);
-        Paint paintImage = new Paint();
-        paintImage.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP));
-        canvas.drawBitmap(bitmap, 0, 0, paintImage);
-        return output;
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         System.out.println("Starting up map");
+        super.onCreate(savedInstanceState);
+        //Set up location services
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         mAuth = FirebaseAuth.getInstance();
         //UserMap reg = (UserMap) getIntent().getSerializableExtra("usr");
         //Boolean reg = (boolean) getIntent().getExtras().get("reg");
         //if(reg != null && reg){
         if (mAuth.getCurrentUser() != null){
-            UserMap register = new UserMap();
+            UserMap person_inf = new UserMap();
             FirebaseUser currentUser = mAuth.getCurrentUser();
             DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app/").getReference();
             mDatabase.child("users").child(currentUser.getUid()).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
                 @Override
                 public void onComplete(@NonNull Task<DataSnapshot> task) {
                     if (!task.isSuccessful()) {
-                        register.firstName = (String) getIntent().getExtras().get("fname");
-                        register.lastName = (String) getIntent().getExtras().get("lname");
-                        register.bio = (String) getIntent().getExtras().get("bio");
-                        register.age = (int) getIntent().getExtras().get("age");
+                        System.out.println("Failed to get user string info");
+                        person_inf.firstName = (String) getIntent().getExtras().get("fname");
+                        person_inf.lastName = (String) getIntent().getExtras().get("lname");
+                        person_inf.bio = (String) getIntent().getExtras().get("bio");
+                        person_inf.age = (int) getIntent().getExtras().get("age");
                     }
                     else {
+                        System.out.println("Got user string info!");
                         HashMap<String, Object> result = (HashMap<String, Object>) task.getResult().getValue();
-                        register.firstName = (String) result.get("first_name");
-                        register.lastName = (String) result.get("last_name");
-                        register.bio = (String) result.get("bio");
-                        register.age = ((Long) result.get("age")).intValue();
+                        person_inf.firstName = (String) result.get("first_name");
+                        person_inf.lastName = (String) result.get("last_name");
+                        person_inf.bio = (String) result.get("bio");
+                        person_inf.age = ((Long) result.get("age")).intValue();
                     }
                 }
             });
@@ -172,43 +158,25 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                     Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                     //Hier getRoundedCroppedBitmap doen werkt niet om een reden?????
                     //register.icon = getRoundedCroppedBitmap(bitmap);
-                    register.icon = bitmap;
+                    System.out.println("Got the bitmap");
+                    person_inf.icon = bitmap;
+                    //set_defaults(); //This needs to be turned off, its a demo feature
+                    //fetchLocation();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception exception) {
-                    register.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
+                    person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
                 }
             });
-
-
-
-            set_defaults(register);
         }
-        else {
-            set_defaults(null);
-        }
-
-        super.onCreate(savedInstanceState);
-        //Set up location services
-        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-        fetchLocation();
 
         // Set the layout file as the content view.
         setContentView(R.layout.activity_map);
-
-
         mapView = findViewById(R.id.mapView);
         System.out.println(mapView);
 
-        // Get a handle to the fragment and register the callback.
-        //SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-         //       .findFragmentById(R.id.mapView);
-        //mapFragment.getMapAsync(this);
-
-        System.out.println("Lets hit it");
         if(checkGooglePlayServices()){
-            System.out.println("We got sooo faaaar");
             mapView.getMapAsync(this);
             mapView.onCreate(savedInstanceState);
         }
@@ -224,17 +192,15 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
             return;
         }
-        System.out.println("Getting location!");
         Task<Location> task = fusedLocationProviderClient.getLastLocation();
         task.addOnSuccessListener(new OnSuccessListener<Location>() {
             @Override
             public void onSuccess(Location location) {
                 if (location != null) {
                     //Change code to update the user's information
-                    currentLocation = location;
-                    //dropMarker(currentLocation, person_inf, true);
+                    //person_inf.lastLoc = location; //Turn this on outside of demo
                     dropMarker(person_inf, true);
-                    dropNeighbourhood();
+                    fetchNeighbourhood();
                 }
             }
         });
@@ -320,7 +286,10 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void fetchNeighbourhood(){
+        //Fill the neighbourhood object with information from the server
 
+        //Now show it
+        dropNeighbourhood();
     }
 
     public void dropNeighbourhood(){

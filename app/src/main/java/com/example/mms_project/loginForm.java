@@ -57,16 +57,18 @@ public class loginForm extends AppCompatActivity {
 
     public void registerSend(View view){
         String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
-        if(this.checkEmailDatabase(email)){ //Already exists! Can't register
+        if(!this.checkEmailFormat(email)){ //Not a valid email string
+            this.showDialog("Invalid email", "Please enter a valid email adress");
+        }
+        else if(this.checkEmailDatabase(email)){ //Already exists! Can't register
             this.showDialog("Error 04", "This email is already registered in our Database. Please log in instead.");
         }
         else { //All good
             Intent intent = new Intent(this, registerForm.class);
-            //intent.putExtra("email-val", email);
+            intent.putExtra("email-val", email);
             startActivity(intent);
             return;
         }
-        return;
     }
 
     private void showDialog(String title, String msg){
@@ -85,17 +87,17 @@ public class loginForm extends AppCompatActivity {
     }
 
     public void logInSend(View view) {
-        Log.d("STATE", "Hello there");
         String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
         String password = ((TextView)findViewById(R.id.textPassword)).getText().toString();
         if(!this.checkEmailFormat(email)){ //Not a valid email string
-            this.showDialog("Invalid email", "Please enter a valid email adress");
+            this.showDialog("Invalid email", "Please enter a valid email address");
+            return;
         }
 
         mAuth.signInWithEmailAndPassword(email, password);
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser != null && email.equals(currentUser.getEmail())){
-            this.showDialog("Loged in with email:", currentUser.getEmail());
+            this.showDialog("Logged in with email:", currentUser.getEmail());
             Log.d("STATE", "Lets go mapview");
             Intent intent = new Intent(this, map_activity.class);
             startActivity(intent);
