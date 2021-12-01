@@ -2,9 +2,12 @@ package com.example.mms_project;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -13,6 +16,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -20,9 +24,12 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.Context;
+
 import com.example.mms_project.R;
 import com.example.mms_project.UserMap;
 import com.example.mms_project.map_activity;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -50,7 +57,6 @@ import java.util.Date;
 
 public class registerForm extends AppCompatActivity {
     private FirebaseAuth mAuth;
-
     String email = null;
     UserMap register = new UserMap();
 
@@ -69,23 +75,22 @@ public class registerForm extends AppCompatActivity {
         context = getApplicationContext();
         Bundle b = getIntent().getExtras();
         email = b.getString("email-val");
-        ((TextView)findViewById(R.id.textEmail)).setText(email);
+        ((TextView) findViewById(R.id.textEmail)).setText(email);
 
     }
 
-    public void addIcon(View view){
+    public void addIcon(View view) {
         Intent getIntent = new Intent(Intent.ACTION_GET_CONTENT);
         getIntent.setType("image/*");
         Intent pickIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         pickIntent.setType("image/*");
         Intent chooserIntent = Intent.createChooser(getIntent, "Select Image");
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] {pickIntent});
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[]{pickIntent});
         startActivityForResult(chooserIntent, PICK_IMAGE);
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE && data != null) {
             //TODO: action
@@ -94,7 +99,7 @@ public class registerForm extends AppCompatActivity {
                 Bitmap b = BitmapFactory.decodeStream(inputStream);
                 b = getRoundedCroppedBitmap(b);
                 register.icon = b;
-                ((ImageView)findViewById(R.id.imageViewIcon)).setImageBitmap(b);
+                ((ImageView) findViewById(R.id.imageViewIcon)).setImageBitmap(b);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -102,7 +107,7 @@ public class registerForm extends AppCompatActivity {
     }
 
     private Bitmap getRoundedCroppedBitmap(Bitmap bitmap) {
-        bitmap = Bitmap.createScaledBitmap(bitmap,BMAP_DIM,BMAP_DIM, false);
+        bitmap = Bitmap.createScaledBitmap(bitmap, BMAP_DIM, BMAP_DIM, false);
         int widthLight = bitmap.getWidth();
         int heightLight = bitmap.getHeight();
         Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
@@ -117,13 +122,13 @@ public class registerForm extends AppCompatActivity {
         return output;
     }
 
-    private boolean checkRegistrationValid(){
-        if (((TextView)findViewById(R.id.textFirstName)).getText().toString().isEmpty() || //check first name
-                ((TextView)findViewById(R.id.textLastName)).getText().toString().isEmpty() || //check last name
-                ((TextView)findViewById(R.id.textBio)).getText().toString().isEmpty()) //check biography
+    private boolean checkRegistrationValid() {
+        if (((TextView) findViewById(R.id.textFirstName)).getText().toString().isEmpty() || //check first name
+                ((TextView) findViewById(R.id.textLastName)).getText().toString().isEmpty() || //check last name
+                ((TextView) findViewById(R.id.textBio)).getText().toString().isEmpty()) //check biography
             return false;
 
-        String birthdate = ((TextView)findViewById(R.id.editTextBirthDay)).getText().toString();
+        String birthdate = ((TextView) findViewById(R.id.editTextBirthDay)).getText().toString();
         try {
             Date bd = sdf.parse(birthdate);
 
@@ -138,17 +143,34 @@ public class registerForm extends AppCompatActivity {
         return true;
     }
 
-    private void sendUserToServer(String userID, String first_name, String last_name, String email, String bio, int age){
-        DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
-        DataBaseUser dbUser = new DataBaseUser(first_name, last_name, email, bio, age);
-        mDatabase.child(userID).setValue(dbUser);
+    private void sendUserToServer(String userID, String first_name, String last_name, String email, String bio, int age, String lat, String lon) {
+                    DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
+                    DataBaseUser dbUser = new DataBaseUser(lat, lon, first_name, last_name, email, bio, age);
+                    mDatabase.child(userID).setValue(dbUser);
+
     }
 
     public void onClickRegister(View view) {
         if(!checkRegistrationValid()){
             return;
         }
-
+        FusedLocationProviderClient fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        int REQUEST_CODE = 101;
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
+            return;
+        }
+        Task<Location> task = fusedLocationProviderClient.getLastLocation();
+        task.addOnSuccessListener(new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    register.lastLoc = location;
+                }
+            }
+        });
         register.firstName = ((TextView)findViewById(R.id.textFirstName)).getText().toString();
         register.lastName =  ((TextView)findViewById(R.id.textLastName)).getText().toString();
         register.bio = ((TextView)findViewById(R.id.textBio)).getText().toString();
@@ -160,8 +182,9 @@ public class registerForm extends AppCompatActivity {
             @Override
             public void onComplete(@NonNull Task<AuthResult> task) {
                 if (task.isSuccessful()) {
+
                     FirebaseUser user = mAuth.getCurrentUser();
-                    sendUserToServer(user.getUid(), register.firstName, register.lastName, email, register.bio, register.age);
+                    sendUserToServer(user.getUid(), register.firstName, register.lastName, email, register.bio, register.age, Double.toString(register.lastLoc.getLatitude()), Double.toString(register.lastLoc.getLongitude()));
 
                     FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
                     StorageReference storageRef = storage.getReference();
