@@ -67,6 +67,9 @@ public class registerForm extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         setContentView(R.layout.activity_register_form);
         context = getApplicationContext();
+        Bundle b = getIntent().getExtras();
+        email = b.getString("email-val");
+        ((TextView)findViewById(R.id.textEmail)).setText(email);
 
     }
 
