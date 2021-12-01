@@ -17,6 +17,9 @@
             android:name=".registerForm"
             android:exported="false" />
         <activity
+            android:name=".registerForm"
+            android:exported="false" />
+        <activity
             android:name=".map_activity"
             android:exported="false" />
         <activity

@@ -1,7 +1,9 @@
 package com.example.mms_project;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,14 +14,30 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.content.Context;
 import com.example.mms_project.R;
 import com.example.mms_project.UserMap;
 import com.example.mms_project.map_activity;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -31,6 +49,7 @@ import java.time.ZoneId;
 import java.util.Date;
 
 public class registerForm extends AppCompatActivity {
+    private FirebaseAuth mAuth;
 
     String email = null;
     UserMap register = new UserMap();
@@ -45,12 +64,8 @@ public class registerForm extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mAuth = FirebaseAuth.getInstance();
         setContentView(R.layout.activity_register_form);
-
-        Bundle b = getIntent().getExtras();
-        email = b.getString("email-value");
-        ((TextView)findViewById(R.id.textViewEmail)).setText(email);
-
         context = getApplicationContext();
 
     }
@@ -120,11 +135,13 @@ public class registerForm extends AppCompatActivity {
         return true;
     }
 
-    private void sendUserToServer(){
-
+    private void sendUserToServer(String userID, String first_name, String last_name, String email, String bio, int age){
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
+        DataBaseUser dbUser = new DataBaseUser(first_name, last_name, email, bio, age);
+        mDatabase.child(userID).setValue(dbUser);
     }
 
-    public void onClickRegister(View view){
+    public void onClickRegister(View view) {
         if(!checkRegistrationValid()){
             return;
         }
@@ -133,10 +150,36 @@ public class registerForm extends AppCompatActivity {
         register.lastName =  ((TextView)findViewById(R.id.textLastName)).getText().toString();
         register.bio = ((TextView)findViewById(R.id.textBio)).getText().toString();
 
+        String password = ((TextView)findViewById(R.id.textPassword)).getText().toString();
+        String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
 
+        mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+            @Override
+            public void onComplete(@NonNull Task<AuthResult> task) {
+                if (task.isSuccessful()) {
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    sendUserToServer(user.getUid(), register.firstName, register.lastName, email, register.bio, register.age);
 
-        //Communicate with server and wait for response
-        sendUserToServer();
+                    FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
+                    StorageReference storageRef = storage.getReference();
+                    StorageReference imagesRef = storageRef.child("images");
+                    StorageReference fileRef = imagesRef.child(user.getUid());
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    register.icon.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    byte[] imageData = baos.toByteArray();
+                    UploadTask uploadTask = fileRef.putBytes(imageData);
+                    uploadTask.addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception exception) {
+                            System.out.println("couldn't upload image");
+                        }
+                    });
+                } else {
+                    return;
+                }
+            }
+        });
 
         //Go to the mapview
         System.out.println("Making the intent map");

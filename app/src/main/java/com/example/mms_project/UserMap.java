@@ -17,6 +17,7 @@ public class UserMap implements Serializable {
     int markerTagId = -1;
 
     //Profile view information
+    public String uID = "";
     public String firstName = "";
     public String lastName = "";
     public String subtitle = "";
