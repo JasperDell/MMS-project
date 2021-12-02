@@ -110,22 +110,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 //        local_inf.add(temp_inf);
 //    }
 
-    private Bitmap getRoundedCroppedBitmap(Bitmap bitmap) {
-        bitmap = Bitmap.createScaledBitmap(bitmap, BMAP_DIM, BMAP_DIM, false);
-        int widthLight = bitmap.getWidth();
-        int heightLight = bitmap.getHeight();
-        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(output);
-        Paint paintColor = new Paint();
-        paintColor.setFlags(Paint.ANTI_ALIAS_FLAG);
-        RectF rectF = new RectF(new Rect(0, 0, widthLight, heightLight));
-        canvas.drawRoundRect(rectF, widthLight / 2, heightLight / 2, paintColor);
-        Paint paintImage = new Paint();
-        paintImage.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP));
-        canvas.drawBitmap(bitmap, 0, 0, paintImage);
-        return output;
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         UserMap person_inf = new UserMap();
@@ -157,34 +141,39 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                         person_inf.lastName = (String) result.get("last_name");
                         person_inf.bio = (String) result.get("bio");
                         person_inf.age = ((Long) result.get("age")).intValue();
+                        person_inf.lastLoc.setLatitude(Double.parseDouble((String)result.get("lat")));
+                        person_inf.lastLoc.setLongitude(Double.parseDouble((String)result.get("lon")));
+
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
+                        StorageReference storageRef = storage.getReference();
+                        StorageReference imagesRef = storageRef.child("images");
+                        StorageReference fileRef = imagesRef.child(user.getUid());
+                        final long ONE_MEGABYTE = 1024 * 1024;
+                        fileRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                            @Override
+                            public void onSuccess(byte[] bytes) {
+                                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                //Hier getRoundedCroppedBitmap doen werkt niet om een reden?????
+                                //register.icon = getRoundedCroppedBitmap(bitmap);
+                                System.out.println("Got the bitmap");
+                                person_inf.icon = bitmap;
+                                //set_defaults(); //This needs to be turned off, its a demo feature
+                                //fetchLocation(person_inf);
+                                //TODO this should be fetch location, this is for demo and testing
+                                dropMarker(person_inf, true);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
+                            }
+                        });
                     }
                 }
             });
-
-            FirebaseUser user = mAuth.getCurrentUser();
-            FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
-            StorageReference storageRef = storage.getReference();
-            StorageReference imagesRef = storageRef.child("images");
-            StorageReference fileRef = imagesRef.child(user.getUid());
-            final long ONE_MEGABYTE = 1024 * 1024;
-            fileRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
-                @Override
-                public void onSuccess(byte[] bytes) {
-                    Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                    //Hier getRoundedCroppedBitmap doen werkt niet om een reden?????
-                    //register.icon = getRoundedCroppedBitmap(bitmap);
-                    System.out.println("Got the bitmap");
-                    person_inf.icon = bitmap;
-                    //set_defaults(); //This needs to be turned off, its a demo feature
-                    fetchLocation(person_inf);
-                }
-            }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception exception) {
-                    person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
-                }
-            });
         }
+        fetchNeighbourhood();
 
         // Set the layout file as the content view.
         setContentView(R.layout.activity_map);
@@ -213,7 +202,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
             public void onSuccess(Location location) {
                 if (location != null) {
                     //Change code to update the user's information
-                    person_inf.lastLoc = location; //Turn this on outside of demo
+                    //person_inf.lastLoc = location; //Turn this on outside of demo
                     dropMarker(person_inf, true);
                     fetchNeighbourhood();
                 }
@@ -302,7 +291,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void fetchNeighbourhood(){
         List<UserMap> local_inf = new ArrayList<UserMap>();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
         DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app/").getReference();
         mDatabase.child("users").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
             @Override
@@ -316,37 +304,71 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                         UserMap person_inf = new UserMap();
                         DataSnapshot i = it.next();
                         HashMap<String, Object> result = (HashMap<String, Object>) i.getValue();
-                        person_inf.uID = (String) result.get("key");
+                        person_inf.uID = i.getKey();
                         person_inf.firstName = (String) result.get("first_name");
                         person_inf.lastName = (String) result.get("last_name");
                         person_inf.bio = (String) result.get("bio");
                         person_inf.age = ((Long) result.get("age")).intValue();
                         person_inf.lastLoc.setLatitude(Double.parseDouble((String)result.get("lat")));
                         person_inf.lastLoc.setLongitude(Double.parseDouble((String)result.get("lon")));
-                        if (person_inf.uID != mAuth.getCurrentUser().getUid()) {
-                            local_inf.add(person_inf);
-                        }
+
+                        FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
+                        StorageReference storageRef = storage.getReference();
+                        StorageReference imagesRef = storageRef.child("images");
+                        StorageReference fileRef = imagesRef.child(person_inf.uID);
+                        final long ONE_MEGABYTE = 1024 * 1024;
+                        fileRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                            @Override
+                            public void onSuccess(byte[] bytes) {
+                                Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                                System.out.println("Got the bitmap");
+                                person_inf.icon = bitmap;
+                                if (person_inf.uID != mAuth.getCurrentUser().getUid()) {
+                                    dropMarker(person_inf, false);
+                                }
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
+                            }
+                        });
                     }
                 }
             }
         });
-        dropNeighbourhood(local_inf);
+        //dropNeighbourhood(local_inf);
     }
 
     public void dropNeighbourhood(List<UserMap> local_inf){
         for(int i = 0; i < local_inf.size(); i++){
             UserMap nb = local_inf.get(i);
-            if (nb.pers_available) {
-                dropMarker(nb, false);
-            }
+            //if (nb.pers_available) {
+            dropMarker(nb, false);
+            //}
         }
+    }
+
+    private Bitmap getRoundedCroppedBitmap(Bitmap bitmap) {
+        bitmap = Bitmap.createScaledBitmap(bitmap, BMAP_DIM, BMAP_DIM, false);
+        int widthLight = bitmap.getWidth();
+        int heightLight = bitmap.getHeight();
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+        Paint paintColor = new Paint();
+        paintColor.setFlags(Paint.ANTI_ALIAS_FLAG);
+        RectF rectF = new RectF(new Rect(0, 0, widthLight, heightLight));
+        canvas.drawRoundRect(rectF, widthLight / 2, heightLight / 2, paintColor);
+        Paint paintImage = new Paint();
+        paintImage.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP));
+        canvas.drawBitmap(bitmap, 0, 0, paintImage);
+        return output;
     }
 
     public void dropMarker(@NonNull UserMap user, boolean focus) {
         if (googleMap == null)
             return;
         LatLng latLng = new LatLng(user.lastLoc.getLatitude(), user.lastLoc.getLongitude());
-        FirebaseUser currentUser = mAuth.getCurrentUser();
         if (!(user.uID.equals(""))) {
             FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
             StorageReference storageRef = storage.getReference();
@@ -357,7 +379,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 @Override
                 public void onSuccess(byte[] bytes) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                    System.out.println("Cropping Bitmap");
                     bitmap = getRoundedCroppedBitmap(bitmap);
                     BitmapDescriptor res = BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bitmap, BMAP_DIM, BMAP_DIM, false));
                     Marker m = googleMap.addMarker(new MarkerOptions()
@@ -381,7 +402,8 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         } else{
-            Bitmap bmap = getRoundedCroppedBitmap(user.icon);
+            Bitmap bmap = user.icon;
+            bmap = getRoundedCroppedBitmap(bmap);
             BitmapDescriptor res = BitmapDescriptorFactory.fromBitmap(Bitmap.createScaledBitmap(bmap,BMAP_DIM,BMAP_DIM, false));
             Marker m = googleMap.addMarker(new MarkerOptions()
                     .position(latLng)
