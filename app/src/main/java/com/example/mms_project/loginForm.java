@@ -49,7 +49,7 @@ public class loginForm extends AppCompatActivity {
     //Function to check if database knows email adress
     private boolean checkEmailDatabase(String email){
         //communicate with server
-        if (email.equals("f@g.com"))
+        if (email.equals("test@user.com"))
             return true;
         return false;
     }

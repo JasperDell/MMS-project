@@ -12,7 +12,7 @@ public class UserMap implements Serializable {
 
     //Basic map information
     public Location lastLoc = new Location("");
-    Bitmap icon;
+    Bitmap icon = null;
     boolean clickable = true;
     int markerTagId = -1;
 
@@ -21,7 +21,7 @@ public class UserMap implements Serializable {
     public String firstName = "";
     public String lastName = "";
     public String subtitle = "";
-    public int age;
+    public int age = -1;
     public boolean pers_available; //Ready to meet?
     public boolean pers_nudgeable; //Can the user request a meeting?
     public String bio = ""; //Detailed profile description made by user
