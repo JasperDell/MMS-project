@@ -144,9 +144,9 @@ public class registerForm extends AppCompatActivity {
     }
 
     private void sendUserToServer(String userID, String first_name, String last_name, String email, String bio, int age, String lat, String lon) {
-                    DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
-                    DataBaseUser dbUser = new DataBaseUser(lat, lon, first_name, last_name, email, bio, age);
-                    mDatabase.child(userID).setValue(dbUser);
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
+        DataBaseUser dbUser = new DataBaseUser(lat, lon, first_name, last_name, email, bio, age);
+        mDatabase.child(userID).setValue(dbUser);
 
     }
 
@@ -168,6 +168,9 @@ public class registerForm extends AppCompatActivity {
             public void onSuccess(Location location) {
                 if (location != null) {
                     register.lastLoc = location;
+                    DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
+                    mDatabase.child(mAuth.getCurrentUser().getUid()).child("lat").setValue(Double.toString(location.getLatitude()));
+                    mDatabase.child(mAuth.getCurrentUser().getUid()).child("lon").setValue(Double.toString(location.getLongitude()));
                 }
             }
         });
