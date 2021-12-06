@@ -93,8 +93,9 @@ public class loginForm extends AppCompatActivity {
             this.showDialog("Invalid email", "Please enter a valid email address");
             return;
         }
-
         mAuth.signInWithEmailAndPassword(email, password);
+
+        System.out.println("Checking user.............");
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser != null && email.equals(currentUser.getEmail())){
             this.showDialog("Logged in with email:", currentUser.getEmail());
