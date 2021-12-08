@@ -65,7 +65,6 @@ public class registerForm extends AppCompatActivity {
     private static Context context;
     DateFormat sdf = new SimpleDateFormat("DD-MM-YYYY");
 
-    ServerConnector server = new ServerConnector();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,12 +133,11 @@ public class registerForm extends AppCompatActivity {
 
             if (bd.before(sdf.parse("01-01-1901")) || bd.after(sdf.parse("01-01-2011")))
                 return false;
-            register.age = Period.between(LocalDate.now(), bd.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()).getYears();
+            register.age = Period.between(bd.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(), LocalDate.now()).getYears();
 
         } catch (ParseException e) {
             return false;
         }
-
         return true;
     }
 
@@ -147,7 +145,6 @@ public class registerForm extends AppCompatActivity {
                     DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app").getReference("users");
                     DataBaseUser dbUser = new DataBaseUser(lat, lon, first_name, last_name, email, bio, age);
                     mDatabase.child(userID).setValue(dbUser);
-
     }
 
     public void onClickRegister(View view) {

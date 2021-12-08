@@ -46,24 +46,12 @@ public class loginForm extends AppCompatActivity {
         return pat.matcher(email).matches();
     }
 
-    //Function to check if database knows email adress
-    private boolean checkEmailDatabase(String email){
-        //communicate with server
-        if (email.equals("test@user.com"))
-            return true;
-        return false;
-    }
-
 
     public void registerSend(View view){
         String email = ((TextView)findViewById(R.id.textEmail)).getText().toString();
         if(!this.checkEmailFormat(email)){ //Not a valid email string
             this.showDialog("Invalid email", "Please enter a valid email adress");
-        }
-        else if(this.checkEmailDatabase(email)){ //Already exists! Can't register
-            this.showDialog("Error 04", "This email is already registered in our Database. Please log in instead.");
-        }
-        else { //All good
+        } else { //All good
             Intent intent = new Intent(this, registerForm.class);
             intent.putExtra("email-val", email);
             startActivity(intent);

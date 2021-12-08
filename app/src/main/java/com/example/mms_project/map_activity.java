@@ -72,6 +72,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     GoogleMap googleMap;
     String markerSelection = "";
 
+    UserMap person_inf;
     //User information
 
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -79,36 +80,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int BMAP_DIM = 256;
     private static final float MAP_ZOOM = 19.25F;
 
-//    //Test function to fake user info with fake intel
-//    private void set_defaults(){
-//
-//        if(person_inf != null){
-//            System.out.println("Got the user from the server!");
-//            person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
-//            person_inf.uID = mAuth.getCurrentUser().getUid();
-//        }
-//        else {
-//            System.out.println("Setting up default fake user");
-//            //set user
-//            person_inf = new UserMap();
-//            person_inf.setLastLoc(52.08545962113923, 4.33562457561493);
-//            person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
-//            person_inf.firstName = "Me";
-//        }
-//
-//        //set neighbourhood
-//        UserMap temp_inf = new UserMap();
-//        temp_inf.setLastLoc(52.08566069844681, 4.335941076278687);
-//        temp_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_woman)).getBitmap();
-//        temp_inf.firstName = "Other";
-//        temp_inf.markerTagId = local_inf.size(); //set marker index to local_inf index
-//        temp_inf.pers_available = true;
-//        temp_inf.pers_nudgeable = false;
-//        temp_inf.subtitle = "General person";
-//        temp_inf.age = 50;
-//        temp_inf.bio = "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident, similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus, omnis voluptas assumenda est, omnis dolor repellendus. Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae. Itaque earum rerum hic tenetur a sapiente delectus, ut aut reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus asperiores repellat";
-//        local_inf.add(temp_inf);
-//    }
 
     private Bitmap getRoundedCroppedBitmap(Bitmap bitmap) {
         bitmap = Bitmap.createScaledBitmap(bitmap, BMAP_DIM, BMAP_DIM, false);
@@ -128,17 +99,15 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        UserMap person_inf = new UserMap();
+        person_inf = new UserMap();
         System.out.println("Starting up map");
         super.onCreate(savedInstanceState);
         //Set up location services
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
         mAuth = FirebaseAuth.getInstance();
-        //UserMap reg = (UserMap) getIntent().getSerializableExtra("usr");
-        //Boolean reg = (boolean) getIntent().getExtras().get("reg");
-        //if(reg != null && reg){
-        if (mAuth.getCurrentUser() != null){
-            FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null){
             DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app/").getReference();
             mDatabase.child("users").child(currentUser.getUid()).get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
                 @Override
@@ -161,22 +130,18 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
 
-            FirebaseUser user = mAuth.getCurrentUser();
             FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
             StorageReference storageRef = storage.getReference();
             StorageReference imagesRef = storageRef.child("images");
-            StorageReference fileRef = imagesRef.child(user.getUid());
+            StorageReference fileRef = imagesRef.child(currentUser.getUid());
             final long ONE_MEGABYTE = 1024 * 1024;
             fileRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
                 @Override
                 public void onSuccess(byte[] bytes) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                    //Hier getRoundedCroppedBitmap doen werkt niet om een reden?????
-                    //register.icon = getRoundedCroppedBitmap(bitmap);
                     System.out.println("Got the bitmap");
                     person_inf.icon = bitmap;
-                    //set_defaults(); //This needs to be turned off, its a demo feature
-                    fetchLocation(person_inf);
+                    fetchLocation();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
@@ -185,7 +150,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             });
         }
-
+        fetchNeighbourhood();
         // Set the layout file as the content view.
         setContentView(R.layout.activity_map);
         mapView = findViewById(R.id.mapView);
@@ -200,7 +165,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void fetchLocation(UserMap person_inf) {
+    private void fetchLocation() {
         if (ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -213,9 +178,8 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
             public void onSuccess(Location location) {
                 if (location != null) {
                     //Change code to update the user's information
-                    person_inf.lastLoc = location; //Turn this on outside of demo
+                    person_inf.lastLoc = location;
                     dropMarker(person_inf, true);
-                    fetchNeighbourhood();
                 }
             }
         });
@@ -302,27 +266,26 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void fetchNeighbourhood(){
         List<UserMap> local_inf = new ArrayList<UserMap>();
-        FirebaseUser currentUser = mAuth.getCurrentUser();
         DatabaseReference mDatabase = FirebaseDatabase.getInstance("https://mms-project-a6f37-default-rtdb.europe-west1.firebasedatabase.app/").getReference();
         mDatabase.child("users").get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DataSnapshot> task) {
                 if (!task.isSuccessful()) {
                     System.out.println("Failed to get users");
-                }
-                else {
+                } else {
                     Iterator<DataSnapshot> x  = task.getResult().getChildren().iterator();
                     for (Iterator<DataSnapshot> it = x; it.hasNext(); ) {
                         UserMap person_inf = new UserMap();
                         DataSnapshot i = it.next();
                         HashMap<String, Object> result = (HashMap<String, Object>) i.getValue();
-                        person_inf.uID = (String) result.get("key");
+                        person_inf.uID = i.getKey();
                         person_inf.firstName = (String) result.get("first_name");
                         person_inf.lastName = (String) result.get("last_name");
                         person_inf.bio = (String) result.get("bio");
                         person_inf.age = ((Long) result.get("age")).intValue();
                         person_inf.lastLoc.setLatitude(Double.parseDouble((String)result.get("lat")));
                         person_inf.lastLoc.setLongitude(Double.parseDouble((String)result.get("lon")));
+                        person_inf.pers_available = true;
                         if (person_inf.uID != mAuth.getCurrentUser().getUid()) {
                             local_inf.add(person_inf);
                         }
@@ -346,7 +309,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         if (googleMap == null)
             return;
         LatLng latLng = new LatLng(user.lastLoc.getLatitude(), user.lastLoc.getLongitude());
-        FirebaseUser currentUser = mAuth.getCurrentUser();
         if (!(user.uID.equals(""))) {
             FirebaseStorage storage = FirebaseStorage.getInstance("gs://mms-project-a6f37.appspot.com/");
             StorageReference storageRef = storage.getReference();
@@ -397,32 +359,6 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    //Function to set personal_info
-    private boolean getUserInfo(){
-
-        return true;
-    }
-
-    //Function to get people near you, returns the quantity
-    private int getLocalInfo(){
-        int num_people = 0;
-
-        return num_people;
-    }
-
-
-//TODO misschien moet dit niet uitgecommand
-
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-//        switch (requestCode) {
-//            case REQUEST_CODE:
-//                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                    fetchLocation();
-//                }
-//                break;
-//        }
-//    }
 
     @Override
     protected void onStart(){
