@@ -72,7 +72,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
     GoogleMap googleMap;
     String markerSelection = "";
 
-    UserMap person_inf;
+    UserMap person_info;
     //User information
 
     FusedLocationProviderClient fusedLocationProviderClient;
@@ -99,7 +99,7 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        person_inf = new UserMap();
+        person_info = new UserMap();
         System.out.println("Starting up map");
         super.onCreate(savedInstanceState);
         //Set up location services
@@ -114,18 +114,18 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 public void onComplete(@NonNull Task<DataSnapshot> task) {
                     if (!task.isSuccessful()) {
                         System.out.println("Failed to get user string info");
-                        person_inf.firstName = (String) getIntent().getExtras().get("fname");
-                        person_inf.lastName = (String) getIntent().getExtras().get("lname");
-                        person_inf.bio = (String) getIntent().getExtras().get("bio");
-                        person_inf.age = (int) getIntent().getExtras().get("age");
+                        person_info.firstName = (String) getIntent().getExtras().get("fname");
+                        person_info.lastName = (String) getIntent().getExtras().get("lname");
+                        person_info.bio = (String) getIntent().getExtras().get("bio");
+                        person_info.age = (int) getIntent().getExtras().get("age");
                     }
                     else {
                         System.out.println("Got user string info!");
                         HashMap<String, Object> result = (HashMap<String, Object>) task.getResult().getValue();
-                        person_inf.firstName = (String) result.get("first_name");
-                        person_inf.lastName = (String) result.get("last_name");
-                        person_inf.bio = (String) result.get("bio");
-                        person_inf.age = ((Long) result.get("age")).intValue();
+                        person_info.firstName = (String) result.get("first_name");
+                        person_info.lastName = (String) result.get("last_name");
+                        person_info.bio = (String) result.get("bio");
+                        person_info.age = ((Long) result.get("age")).intValue();
                     }
                 }
             });
@@ -140,17 +140,16 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                 public void onSuccess(byte[] bytes) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
                     System.out.println("Got the bitmap");
-                    person_inf.icon = bitmap;
+                    person_info.icon = bitmap;
                     fetchLocation();
                 }
             }).addOnFailureListener(new OnFailureListener() {
                 @Override
                 public void onFailure(@NonNull Exception exception) {
-                    person_inf.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
+                    person_info.icon = ((BitmapDrawable) getDrawable(R.drawable.default_man)).getBitmap();
                 }
             });
         }
-        fetchNeighbourhood();
         // Set the layout file as the content view.
         setContentView(R.layout.activity_map);
         mapView = findViewById(R.id.mapView);
@@ -178,8 +177,9 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
             public void onSuccess(Location location) {
                 if (location != null) {
                     //Change code to update the user's information
-                    person_inf.lastLoc = location;
-                    dropMarker(person_inf, true);
+                    person_info.lastLoc = location;
+                    dropMarker(person_info, true);
+                    fetchNeighbourhood();
                 }
             }
         });
@@ -285,24 +285,13 @@ public class map_activity extends AppCompatActivity implements OnMapReadyCallbac
                         person_inf.age = ((Long) result.get("age")).intValue();
                         person_inf.lastLoc.setLatitude(Double.parseDouble((String)result.get("lat")));
                         person_inf.lastLoc.setLongitude(Double.parseDouble((String)result.get("lon")));
-                        person_inf.pers_available = true;
                         if (person_inf.uID != mAuth.getCurrentUser().getUid()) {
-                            local_inf.add(person_inf);
+                            dropMarker(person_inf, false);
                         }
                     }
                 }
             }
         });
-        dropNeighbourhood(local_inf);
-    }
-
-    public void dropNeighbourhood(List<UserMap> local_inf){
-        for(int i = 0; i < local_inf.size(); i++){
-            UserMap nb = local_inf.get(i);
-            if (nb.pers_available) {
-                dropMarker(nb, false);
-            }
-        }
     }
 
     public void dropMarker(@NonNull UserMap user, boolean focus) {
